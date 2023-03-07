@@ -9,7 +9,8 @@ TLS/SSL Certificate expiration check
 
 ```shell
 > cd cert-server
-> node cert_info.js
+> npm install
+> npm start
 ```
 
 

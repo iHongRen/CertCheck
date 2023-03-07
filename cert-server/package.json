@@ -1,0 +1,14 @@
+{
+  "name": "cert-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "DBTool.js",
+  "scripts": {
+    "start": "node cert_info.js"
+  },
+  "author": "ihongren",
+  "license": "ISC",
+  "dependencies": {
+    "sqlite3": "^5.1.4"
+  }
+}
