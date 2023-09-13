@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS ${TableName.Cert} (
   PRIMARY KEY(host, port)
 );
 `
-db.executeSql(createTable, (err) => {
+db.executeSql(createTable, err => {
     if (err) {
         console.log(err)
     }
@@ -46,7 +46,7 @@ http.createServer(function (request, response) {
                 let infos = await queryDomains()
 
                 const promises = []
-                infos.forEach((e) => {
+                infos.forEach(e => {
                     if (e.detail) {
                         e.detail = JSON.parse(e.detail)
                     } else {
@@ -92,7 +92,7 @@ http.createServer(function (request, response) {
             try {
                 const params = JSON.parse(data)
                 console.log(params)
-                addDomain(params).then((e) => {
+                addDomain(params).then(e => {
                     response.end('success')
                 })
             } catch (error) {
@@ -142,7 +142,11 @@ console.log('TLS证书检查系统服务器已开启端口:8444')
 
 // 捕获异常，保持不退出
 process.on('uncaughtException', function (err) {
-    console.error('uncaughtException' + err)
+    console.error('未捕获的异常', err.message)
+})
+
+process.on('unhandledRejection', function (err, promise) {
+    console.error('有Promise没有被捕获的失败函数', err.message)
 })
 
 function queryDomains() {
@@ -177,37 +181,31 @@ function addDomain({ host, port, intro }) {
         port = 443
     }
     return new Promise(async (resolve, reject) => {
-        db.executeSql(
-            `replace into ${TableName.Cert}(host, port, intro) values ('${host}', '${port}', '${intro}')`,
-            (err) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve()
-                }
+        db.executeSql(`replace into ${TableName.Cert}(host, port, intro) values ('${host}', '${port}', '${intro}')`, err => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve()
             }
-        )
+        })
     })
 }
 
 function fillDomain({ host, port, detail, expired }) {
     return new Promise(async (resolve, reject) => {
-        db.executeSql(
-            `update ${TableName.Cert} set detail='${detail}', expired=${expired} where host='${host}' and port='${port}'`,
-            (err) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    resolve()
-                }
+        db.executeSql(`update ${TableName.Cert} set detail='${detail}', expired=${expired} where host='${host}' and port='${port}'`, err => {
+            if (err) {
+                reject(err)
+            } else {
+                resolve()
             }
-        )
+        })
     })
 }
 
 function deleteDomain({ host, port }) {
     return new Promise(async (resolve, reject) => {
-        db.executeSql(`delete from ${TableName.Cert} where host='${host}' and port='${port}'`, (err) => {
+        db.executeSql(`delete from ${TableName.Cert} where host='${host}' and port='${port}'`, err => {
             if (err) {
                 reject(err)
             } else {
@@ -219,7 +217,7 @@ function deleteDomain({ host, port }) {
 
 function updateDomain({ host, port }) {
     return new Promise(async (resolve, reject) => {
-        db.executeSql(`update ${TableName.Cert} set detail = null where host='${host}' and port='${port}'`, (err) => {
+        db.executeSql(`update ${TableName.Cert} set detail = null where host='${host}' and port='${port}'`, err => {
             if (err) {
                 reject(err)
             } else {
@@ -245,18 +243,7 @@ function getCertInfo({ host, port }) {
             () => {
                 const x509Certificate = socket.getPeerCertificate(true)
                 socket.destroy()
-                const {
-                    subject,
-                    subjectAltName,
-                    issuer,
-                    infoAccess,
-                    valid_from,
-                    valid_to,
-                    fingerprint,
-                    fingerprint256,
-                    keyUsage,
-                    serialNumber
-                } = x509Certificate
+                const { subject, subjectAltName, issuer, infoAccess, valid_from, valid_to, fingerprint, fingerprint256, keyUsage, serialNumber } = x509Certificate
                 resolve({
                     subject,
                     subjectAltName,
@@ -271,10 +258,9 @@ function getCertInfo({ host, port }) {
                 })
             }
         )
-        socket.on('timeout', () => {
+        socket.on('error', () => {
             resolve({})
             socket.destroy()
-            // reject(new Error('Handshake timeout'))
         })
     })
 }
